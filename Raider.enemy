@@ -1,0 +1,147 @@
+// Raider.enemy.h
+#pragma once
+#include "CoreMinimal.h"
+#include "GameFramework/Character.h"
+#include "Raider.enemy.generated.h"
+
+UCLASS()
+class STRONGHOLDSURVIVAL_API ARaiderEnemy : public ACharacter
+{
+    GENERATED_BODY()
+
+public:
+    ARaiderEnemy();
+
+protected:
+    virtual void BeginPlay() override;
+
+    // Health scaling by wave
+    int CurrentHealth;
+
+    // Base stats
+    int Wave1Health = 30;
+    int Wave2Health = 50;
+    float MovementSpeedMounted = 900.0f; // fast on Doomsday horse
+    int AttackDamage = 10; // 5 hearts = 10 HP
+
+    // Hitbox dimensions (2x2x2 blocks)
+    FVector HitboxSize = FVector(200.0f, 200.0f, 200.0f);
+
+    // Special ability: Doomsday Howl
+    void DoomsdayHowl();
+
+    // Block-breaking logic
+    bool CanBreakBlock(FString BlockType, bool IsExposedToWeakMaterial);
+
+    // Combat
+    void AttackPlayer(class APlayerCharacter* PlayerTarget);
+    void AttackStructure(class ABlock* TargetBlock);
+
+public:
+    virtual void Tick(float DeltaTime) override;
+
+    // Sound + HUD references
+    UPROPERTY(EditAnywhere, Category="Audio")
+    USoundBase* HowlSound;
+
+    UPROPERTY(EditAnywhere, Category="Effects")
+    TSubclassOf<UCameraShakeBase> CameraShakeClass;
+
+    UPROPERTY(EditAnywhere, Category="UI")
+    TSubclassOf<class UUserWidget> IncomingRaidersWidgetClass;
+};
+
+// Raider.enemy.cpp
+#include "Raider.enemy.h"
+#include "Kismet/GameplayStatics.h"
+#include "PlayerCharacter.h"
+#include "Block.h"
+#include "Blueprint/UserWidget.h"
+
+ARaiderEnemy::ARaiderEnemy()
+{
+    PrimaryActorTick.bCanEverTick = true;
+    CurrentHealth = Wave1Health;
+}
+
+void ARaiderEnemy::BeginPlay()
+{
+    Super::BeginPlay();
+    // Instantly target player on spawn
+    APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+    if (Player)
+    {
+        // Pathfinding logic here
+    }
+}
+
+void ARaiderEnemy::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+    // Movement + AI updates
+}
+
+void ARaiderEnemy::DoomsdayHowl()
+{
+    // Play howl sound (only for targeted player)
+    if (HowlSound)
+    {
+        UGameplayStatics::PlaySound2D(this, HowlSound);
+    }
+
+    // Screen shake
+    if (CameraShakeClass)
+    {
+        UGameplayStatics::PlayWorldCameraShake(this, CameraShakeClass, GetActorLocation(), 0.0f, 1000.0f);
+    }
+
+    // Show ominous HUD text: "RAIDERS INCOMING. PREPARE"
+    if (IncomingRaidersWidgetClass)
+    {
+        UUserWidget* WarningWidget = CreateWidget<UUserWidget>(GetWorld(), IncomingRaidersWidgetClass);
+        if (WarningWidget)
+        {
+            WarningWidget->AddToViewport();
+        }
+    }
+
+    // Rally nearby Raiders (within 15 blocks)
+    TArray<AActor*> NearbyRaiders;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARaiderEnemy::StaticClass(), NearbyRaiders);
+
+    for (AActor* RaiderActor : NearbyRaiders)
+    {
+        if (RaiderActor != this && FVector::Dist(RaiderActor->GetActorLocation(), GetActorLocation()) <= 1500.0f)
+        {
+            // Update AI target to player
+            APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
+            if (Player)
+            {
+                // Pathfinding logic to player here
+            }
+        }
+    }
+}
+
+bool ARaiderEnemy::CanBreakBlock(FString BlockType, bool IsExposedToWeakMaterial)
+{
+    if (BlockType == "Stone" && !IsExposedToWeakMaterial)
+        return false;
+    return true;
+}
+
+void ARaiderEnemy::AttackPlayer(APlayerCharacter* PlayerTarget)
+{
+    if (PlayerTarget)
+    {
+        PlayerTarget->TakeDamage(AttackDamage, FDamageEvent(), GetController(), this);
+    }
+}
+
+void ARaiderEnemy::AttackStructure(ABlock* TargetBlock)
+{
+    if (TargetBlock && CanBreakBlock(TargetBlock->BlockType, TargetBlock->IsExposed))
+    {
+        TargetBlock->ApplyDamage(AttackDamage);
+    }
+}
