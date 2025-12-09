@@ -17,15 +17,15 @@ protected:
 
     // Health scaling by wave
     int CurrentHealth;
-
-    // Base stats
     int Wave1Health = 30;
     int Wave2Health = 50;
+
+    // Base stats
     float MovementSpeedMounted = 900.0f; // fast on Doomsday horse
     int AttackDamage = 10; // 5 hearts = 10 HP
 
-    // Hitbox dimensions (2x2x2 blocks)
-    FVector HitboxSize = FVector(200.0f, 200.0f, 200.0f);
+    // Hitbox (slightly smaller than 2x2x2 blocks)
+    FVector HitboxSize = FVector(190.0f, 190.0f, 190.0f);
 
     // Special ability: Doomsday Howl
     void DoomsdayHowl();
@@ -40,7 +40,14 @@ protected:
 public:
     virtual void Tick(float DeltaTime) override;
 
-    // Sound + HUD references
+    // Appearance (semi-realistic meshes)
+    UPROPERTY(EditAnywhere, Category="Visuals")
+    USkeletalMeshComponent* RaiderMesh;
+
+    UPROPERTY(EditAnywhere, Category="Mount")
+    USkeletalMeshComponent* DoomsdayHorseMesh;
+
+    // Audio + HUD
     UPROPERTY(EditAnywhere, Category="Audio")
     USoundBase* HowlSound;
 
@@ -62,6 +69,13 @@ ARaiderEnemy::ARaiderEnemy()
 {
     PrimaryActorTick.bCanEverTick = true;
     CurrentHealth = Wave1Health;
+
+    // Semi-realistic appearance setup
+    RaiderMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("RaiderMesh"));
+    RaiderMesh->SetupAttachment(RootComponent);
+
+    DoomsdayHorseMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("DoomsdayHorseMesh"));
+    DoomsdayHorseMesh->SetupAttachment(RaiderMesh);
 }
 
 void ARaiderEnemy::BeginPlay()
@@ -113,7 +127,6 @@ void ARaiderEnemy::DoomsdayHowl()
     {
         if (RaiderActor != this && FVector::Dist(RaiderActor->GetActorLocation(), GetActorLocation()) <= 1500.0f)
         {
-            // Update AI target to player
             APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0));
             if (Player)
             {
