@@ -80,7 +80,7 @@ ARaiderEnemy::ARaiderEnemy()
 
     // Notes for asset assignment:
     // RaiderMesh → undead knight with rusted armor + glowing ember eyes
-    // DoomsdayHorseMesh → hybrid horse (half decayed, half alive), glowing red eyes, dark mane, exposed ribs
+    // DoomsdayHorseMesh → hybrid horse (half decayed, half alive), glowing red eyes, exposed ribs, dark mane
 }
 
 void ARaiderEnemy::BeginPlay()
