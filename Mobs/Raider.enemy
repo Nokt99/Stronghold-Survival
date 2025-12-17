@@ -1,5 +1,5 @@
 // Raider.h + Raider.cpp + RaiderAIController.h/.cpp combined
-// Drop into your project and split into .h/.cpp files if needed
+// Drop into your project and split into .h/.cpp files if needed (editors note)
 
 #pragma once
 
